@@ -11,13 +11,9 @@ import org.strykeforce.thirdcoast.telemetry.TelemetryController;
 import org.strykeforce.thirdcoast.telemetry.TelemetryService;
 
 public class Robot extends TimedRobot {
-  // Instantiate this before Subsystems because they use telemetry service.
+
   public static final TelemetryService TELEMETRY = new TelemetryService(TelemetryController::new);
-
   public static final DriveSubsystem DRIVE = new DriveSubsystem();
-
-  // Controls initialize Commands so this should be instantiated last to prevent
-  // NullPointerExceptions in commands that require() Subsystems above.
   public static final Controls CONTROLS = new Controls();
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());

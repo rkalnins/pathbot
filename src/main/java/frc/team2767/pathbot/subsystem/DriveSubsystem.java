@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import frc.team2767.pathbot.Robot;
 import frc.team2767.pathbot.command.TeleOpDriveCommand;
+import frc.team2767.pathbot.motion.PathController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.strykeforce.thirdcoast.swerve.SwerveDrive;
@@ -19,12 +20,13 @@ import org.strykeforce.thirdcoast.telemetry.TelemetryService;
 
 public class DriveSubsystem extends Subsystem {
 
-  private static final double DRIVE_SETPOINT_MAX = 0.0;
-  private static final double ROBOT_LENGTH = 1.0;
-  private static final double ROBOT_WIDTH = 1.0;
+  private static final double DRIVE_SETPOINT_MAX = 25_000.0;
+  private static final double ROBOT_LENGTH = 21.0;
+  private static final double ROBOT_WIDTH = 26.0;
 
   private final SwerveDrive swerve = getSwerve();
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
+  private PathController pathController;
 
   public DriveSubsystem() {}
 
@@ -52,6 +54,21 @@ public class DriveSubsystem extends Subsystem {
     double adj = gyro.getAngle() % 360;
     gyro.setAngleAdjustment(-adj);
     logger.info("resetting gyro zero ({})", adj);
+  }
+
+  public void startPath(String path, double targetYaw) {
+    logger.debug("starting path");
+    this.pathController = new PathController(swerve, path, targetYaw);
+    pathController.start();
+  }
+
+  public boolean isPathFinished() {
+    return pathController.isFinished();
+  }
+
+  public void interruptPath() {
+    logger.debug("path interrupted");
+    pathController.interrupt();
   }
 
   // Swerve configuration
