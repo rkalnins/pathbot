@@ -21,13 +21,14 @@ import org.strykeforce.thirdcoast.telemetry.TelemetryService;
 
 public class DriveSubsystem extends Subsystem {
 
-  private static final double DRIVE_SETPOINT_MAX = 25_000.0;
+  private static final double DRIVE_SETPOINT_MAX = 10_000.0;
   private static final double ROBOT_LENGTH = 21.0;
   private static final double ROBOT_WIDTH = 26.0;
 
   private final SwerveDrive swerve = getSwerve();
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private PathController pathController;
+  private boolean isDrivingPath = false;
 
   public DriveSubsystem() {}
 
@@ -46,7 +47,7 @@ public class DriveSubsystem extends Subsystem {
   }
 
   public void drive(double forward, double strafe, double azimuth) {
-    swerve.drive(forward, strafe, azimuth);
+    swerve.drive(forward, strafe, -azimuth);
   }
 
   public void zeroGyro() {
@@ -60,16 +61,28 @@ public class DriveSubsystem extends Subsystem {
   public void startPath(String path, double targetYaw) {
     logger.debug("starting path");
     this.pathController = new PathController(swerve, path, targetYaw);
+    isDrivingPath = true;
     pathController.start();
   }
 
   public boolean isPathFinished() {
-    return pathController.isFinished();
+
+    if (pathController.isFinished()) {
+      isDrivingPath = false;
+      return true;
+    }
+
+    return false;
   }
 
   public void interruptPath() {
     logger.debug("path interrupted");
     pathController.interrupt();
+    isDrivingPath = false;
+  }
+
+  public boolean isDrivingPath() {
+    return isDrivingPath;
   }
 
   // Swerve configuration

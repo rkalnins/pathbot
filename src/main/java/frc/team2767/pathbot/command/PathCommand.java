@@ -14,7 +14,7 @@ public class PathCommand extends Command {
 
   @Override
   protected void initialize() {
-    DRIVE.startPath("loading_to_cargo_R_R", 0.0);
+    DRIVE.startPath("loading_to_cargo_B_L", 0.0);
   }
 
   @Override

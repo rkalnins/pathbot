@@ -10,7 +10,7 @@ import org.strykeforce.thirdcoast.swerve.Wheel;
 public class PathController implements Runnable {
 
   private static final int NUM_WHEELS = 4;
-  private static final int TICKS_PER_INCH = 1700;
+  private static final int TICKS_PER_INCH = 2_000;
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final int PID = 0;
@@ -64,7 +64,7 @@ public class PathController implements Runnable {
         logState();
         double ticksPerSecMax = wheels[0].getDriveSetpointMax() * 10.0; // ticks/100ms
         setPreferences();
-        maxVelocityInSec = ticksPerSecMax / TICKS_PER_INCH;
+        maxVelocityInSec = ticksPerSecMax / TICKS_PER_INCH; // in/s
         iteration = 0;
         DRIVE.setDriveMode(SwerveDrive.DriveMode.CLOSED_LOOP);
 
@@ -78,16 +78,16 @@ public class PathController implements Runnable {
       case RUNNING:
         logState();
         if (iteration == trajectory.length() - 1) {
-
           state = States.STOPPING;
         }
 
         Trajectory.Segment segment = trajectory.getIteration(iteration);
-        double desiredVelocity = segment.velocity / (maxVelocityInSec);
+
+        double desiredVelocity = segment.velocity / (maxVelocityInSec); // in/s / in/s
         double setpointVelocity =
             desiredVelocity
                 + distanceKp * distanceError(segment.position)
-                + accelerationKf * segment.acceleration;
+                + accelerationKf * segment.acceleration; //
         double forward = Math.cos(segment.heading) * setpointVelocity;
         double strafe = Math.sin(segment.heading) * setpointVelocity;
         double yaw =
