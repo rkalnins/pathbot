@@ -1,7 +1,6 @@
 package frc.team2767.pathbot.motion;
 
 import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.Preferences;
 import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,6 @@ public class PathController implements Runnable {
   @SuppressWarnings("FieldCanBeLocal")
   private double yawKp;
 
-  private Preferences preferences;
   private Trajectory trajectory;
   private Notifier notifier;
   private Wheel[] wheels;
@@ -42,7 +40,6 @@ public class PathController implements Runnable {
     DRIVE = swerveDrive;
     this.targetYaw = targetYaw;
     wheels = DRIVE.getWheels();
-    preferences = Preferences.getInstance();
     File csvFile = new File("home/lvuser/deploy/paths/" + pathName + ".pf1.csv");
 
     trajectory = new Trajectory(csvFile);
@@ -65,7 +62,7 @@ public class PathController implements Runnable {
     switch (state) {
       case STARTING:
         logState();
-        double ticksPerSecMax = wheels[0].getDriveSetpointMax() * 10.0;
+        double ticksPerSecMax = wheels[0].getDriveSetpointMax() * 10.0; // ticks/100ms
         setPreferences();
         maxVelocityInSec = ticksPerSecMax / TICKS_PER_INCH;
         iteration = 0;
@@ -130,8 +127,8 @@ public class PathController implements Runnable {
   }
 
   private void setPreferences() {
-    yawKp = preferences.getDouble("PathController/pathYawKp", 0.01);
-    distanceKp = preferences.getDouble("PathController/pathDistKp", 0.000001);
+    yawKp = 0.01;
+    distanceKp = 0.01;
   }
 
   private void logInit() {

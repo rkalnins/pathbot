@@ -2,6 +2,7 @@ package frc.team2767.pathbot.subsystem;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.VelocityMeasPeriod;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
 import com.kauailabs.navx.frc.AHRS;
@@ -105,8 +106,18 @@ public class DriveSubsystem extends Subsystem {
     TalonSRXConfiguration driveConfig = new TalonSRXConfiguration();
     driveConfig.primaryPID.selectedFeedbackSensor = FeedbackDevice.CTRE_MagEncoder_Relative;
     driveConfig.continuousCurrentLimit = 40;
-    driveConfig.peakCurrentDuration = 0;
-    driveConfig.peakCurrentLimit = 0;
+    driveConfig.peakCurrentDuration = 45;
+    driveConfig.peakCurrentLimit = 40;
+    driveConfig.slot0.kP = 0.05;
+    driveConfig.slot0.kI = 0.0005;
+    driveConfig.slot0.kD = 0.0;
+    driveConfig.slot0.kF = 0.032;
+    driveConfig.slot0.integralZone = 1000;
+    driveConfig.slot0.maxIntegralAccumulator = 150_000;
+    driveConfig.slot0.allowableClosedloopError = 0;
+    driveConfig.velocityMeasurementPeriod = VelocityMeasPeriod.Period_100Ms;
+    driveConfig.velocityMeasurementWindow = 64;
+    driveConfig.voltageCompSaturation = 12;
 
     TelemetryService telemetryService = Robot.TELEMETRY;
     telemetryService.stop();
