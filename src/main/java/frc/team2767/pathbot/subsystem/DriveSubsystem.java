@@ -11,6 +11,9 @@ import edu.wpi.first.wpilibj.command.Subsystem;
 import frc.team2767.pathbot.Robot;
 import frc.team2767.pathbot.command.TeleOpDriveCommand;
 import frc.team2767.pathbot.motion.PathController;
+import java.util.Set;
+import java.util.function.DoubleSupplier;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.strykeforce.thirdcoast.swerve.SwerveDrive;
@@ -18,8 +21,10 @@ import org.strykeforce.thirdcoast.swerve.SwerveDrive.DriveMode;
 import org.strykeforce.thirdcoast.swerve.SwerveDriveConfig;
 import org.strykeforce.thirdcoast.swerve.Wheel;
 import org.strykeforce.thirdcoast.telemetry.TelemetryService;
+import org.strykeforce.thirdcoast.telemetry.grapher.Measure;
+import org.strykeforce.thirdcoast.telemetry.item.Item;
 
-public class DriveSubsystem extends Subsystem {
+public class DriveSubsystem extends Subsystem implements Item {
 
   public static final double DRIVE_SETPOINT_MAX = 40_000.0;
   private static final double ROBOT_LENGTH = 21.0;
@@ -138,6 +143,7 @@ public class DriveSubsystem extends Subsystem {
 
     TelemetryService telemetryService = Robot.TELEMETRY;
     telemetryService.stop();
+    telemetryService.register(this);
 
     Wheel[] wheels = new Wheel[4];
 
@@ -165,5 +171,44 @@ public class DriveSubsystem extends Subsystem {
 
   public void drive(double forward, double strafe, double azimuth) {
     swerve.drive(forward, strafe, azimuth);
+  }
+
+  @NotNull
+  @Override
+  public String getDescription() {
+    return "drive";
+  }
+
+  @Override
+  public int getDeviceId() {
+    return 0;
+  }
+
+  @NotNull
+  @Override
+  public Set<Measure> getMeasures() {
+    return Set.of(Measure.ANGLE, Measure.CLOSED_LOOP_ERROR);
+  }
+
+  @NotNull
+  @Override
+  public String getType() {
+    return "drive subsystem";
+  }
+
+  @Override
+  public int compareTo(@NotNull Item item) {
+    return 0;
+  }
+
+  @NotNull
+  @Override
+  public DoubleSupplier measurementFor(@NotNull Measure measure) {
+    switch (measure) {
+      case ANGLE:
+        return () -> Math.IEEEremainder(swerve.getGyro().getAngle(), 360);
+      default:
+        return () -> 2767.0;
+    }
   }
 }

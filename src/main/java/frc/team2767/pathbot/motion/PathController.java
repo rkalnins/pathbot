@@ -10,7 +10,7 @@ import org.strykeforce.thirdcoast.swerve.Wheel;
 public class PathController implements Runnable {
 
   private static final int NUM_WHEELS = 4;
-  private static final int TICKS_PER_INCH = 1800;
+  private static final int TICKS_PER_INCH = 2300;
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final int PID = 0;
 
@@ -62,7 +62,6 @@ public class PathController implements Runnable {
       case STARTING:
         logState();
         double ticksPerSecMax = wheels[0].getDriveSetpointMax() * 10.0; // ticks/100ms
-        setPreferences();
         maxVelocityInSec = ticksPerSecMax / TICKS_PER_INCH; // in/s
         iteration = 0;
         DRIVE.setDriveMode(SwerveDrive.DriveMode.CLOSED_LOOP);
@@ -82,17 +81,11 @@ public class PathController implements Runnable {
 
         Trajectory.Segment segment = trajectory.getIteration(iteration);
 
-        double percentOfMax = segment.velocity / maxVelocityInSec;
-        double setpointVelocity =
-            percentOfMax
-                + distanceKp * distanceError(segment.position)
-                + accelerationKf * segment.acceleration;
+        double setpointVelocity = segment.velocity / maxVelocityInSec;
+
         double forward = Math.cos(segment.heading) * setpointVelocity;
         double strafe = Math.sin(segment.heading) * setpointVelocity;
-        double yaw =
-            -yawKp
-                * (Math.IEEEremainder(DRIVE.getGyro().getAngle(), 360.0)
-                    - Math.toDegrees(targetYaw));
+        double yaw = -yawKp * getYawError();
         logger.debug(
             "{} : x={} y={} forward = {} strafe = {}, dist err = {} yaw = {}",
             iteration,
@@ -104,10 +97,6 @@ public class PathController implements Runnable {
             yaw);
 
         if (forward > 1d || strafe > 1d) logger.warn("forward = {} strafe = {}", forward, strafe);
-
-        //        if (iteration > 20 && Math.abs(forward) < 0.01 && Math.abs(strafe) < 0.01) {
-        //          state = States.STOPPING;
-        //        }
 
         DRIVE.drive(forward, strafe, yaw);
         iteration++;
@@ -129,11 +118,6 @@ public class PathController implements Runnable {
     logger.info("{}", state);
   }
 
-  private void setPreferences() {
-    yawKp = 0.01;
-    distanceKp = 1e-7; // 0.000005
-  }
-
   private void logInit() {
     logger.info(
         "Path start yawKp = {} distKp = {} targetYaw = {} maxVelocity in/s = {}",
@@ -141,6 +125,10 @@ public class PathController implements Runnable {
         distanceKp,
         targetYaw,
         maxVelocityInSec);
+  }
+
+  public double getYawError() {
+    return (Math.IEEEremainder(DRIVE.getGyro().getAngle(), 360.0) - Math.toDegrees(targetYaw));
   }
 
   private double distanceError(double position) {
