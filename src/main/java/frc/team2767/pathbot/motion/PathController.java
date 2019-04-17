@@ -10,13 +10,12 @@ import org.strykeforce.thirdcoast.swerve.Wheel;
 public class PathController implements Runnable {
 
   private static final int NUM_WHEELS = 4;
-  private static final int TICKS_PER_INCH = 2_000;
+  private static final int TICKS_PER_INCH = 1800;
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
   private final int PID = 0;
 
   @SuppressWarnings("FieldCanBeLocal")
-  private final double accelerationKf = 0.0;
+  private final double accelerationKf = 0.00000;
 
   private SwerveDrive DRIVE;
 
@@ -32,7 +31,7 @@ public class PathController implements Runnable {
   private States state;
   private double maxVelocityInSec;
   private double targetYaw;
-  private double DT = 0.05;
+  private double DT = 0.02;
   private int iteration;
   private int[] start;
 
@@ -83,11 +82,11 @@ public class PathController implements Runnable {
 
         Trajectory.Segment segment = trajectory.getIteration(iteration);
 
-        double desiredVelocity = segment.velocity / (maxVelocityInSec); // in/s / in/s
+        double percentOfMax = segment.velocity / maxVelocityInSec;
         double setpointVelocity =
-            desiredVelocity
+            percentOfMax
                 + distanceKp * distanceError(segment.position)
-                + accelerationKf * segment.acceleration; //
+                + accelerationKf * segment.acceleration;
         double forward = Math.cos(segment.heading) * setpointVelocity;
         double strafe = Math.sin(segment.heading) * setpointVelocity;
         double yaw =
@@ -105,6 +104,10 @@ public class PathController implements Runnable {
             yaw);
 
         if (forward > 1d || strafe > 1d) logger.warn("forward = {} strafe = {}", forward, strafe);
+
+        //        if (iteration > 20 && Math.abs(forward) < 0.01 && Math.abs(strafe) < 0.01) {
+        //          state = States.STOPPING;
+        //        }
 
         DRIVE.drive(forward, strafe, yaw);
         iteration++;
@@ -128,7 +131,7 @@ public class PathController implements Runnable {
 
   private void setPreferences() {
     yawKp = 0.01;
-    distanceKp = 0.01;
+    distanceKp = 1e-7; // 0.000005
   }
 
   private void logInit() {
@@ -141,8 +144,7 @@ public class PathController implements Runnable {
   }
 
   private double distanceError(double position) {
-    double desired = TICKS_PER_INCH * position;
-    return desired - getDistance();
+    return TICKS_PER_INCH * position - getDistance();
   }
 
   private double getDistance() {

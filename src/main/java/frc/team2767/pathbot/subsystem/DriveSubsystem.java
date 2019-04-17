@@ -21,7 +21,7 @@ import org.strykeforce.thirdcoast.telemetry.TelemetryService;
 
 public class DriveSubsystem extends Subsystem {
 
-  private static final double DRIVE_SETPOINT_MAX = 10_000.0;
+  public static final double DRIVE_SETPOINT_MAX = 40_000.0;
   private static final double ROBOT_LENGTH = 21.0;
   private static final double ROBOT_WIDTH = 26.0;
 
@@ -44,10 +44,6 @@ public class DriveSubsystem extends Subsystem {
 
   public void zeroAzimuthEncoders() {
     swerve.zeroAzimuthEncoders();
-  }
-
-  public void drive(double forward, double strafe, double azimuth) {
-    swerve.drive(forward, strafe, -azimuth);
   }
 
   public void zeroGyro() {
@@ -81,11 +77,17 @@ public class DriveSubsystem extends Subsystem {
     isDrivingPath = false;
   }
 
+  public void driveWheels(double azimuth, double drive) {
+    for (Wheel wheel : swerve.getWheels()) wheel.set(azimuth, drive);
+  }
+
+  public int getDrivePosition(int wheel) {
+    return swerve.getWheels()[wheel].getDriveTalon().getSelectedSensorPosition(0);
+  }
+
   public boolean isDrivingPath() {
     return isDrivingPath;
   }
-
-  // Swerve configuration
 
   private SwerveDrive getSwerve() {
     SwerveDriveConfig config = new SwerveDriveConfig();
@@ -98,6 +100,8 @@ public class DriveSubsystem extends Subsystem {
 
     return new SwerveDrive(config);
   }
+
+  // Swerve configuration
 
   private Wheel[] getWheels() {
     TalonSRXConfiguration azimuthConfig = new TalonSRXConfiguration();
@@ -121,12 +125,12 @@ public class DriveSubsystem extends Subsystem {
     driveConfig.continuousCurrentLimit = 40;
     driveConfig.peakCurrentDuration = 45;
     driveConfig.peakCurrentLimit = 40;
-    driveConfig.slot0.kP = 0.05;
-    driveConfig.slot0.kI = 0.0005;
-    driveConfig.slot0.kD = 0.0;
-    driveConfig.slot0.kF = 0.032;
-    driveConfig.slot0.integralZone = 1000;
-    driveConfig.slot0.maxIntegralAccumulator = 150_000;
+    driveConfig.slot0.kP = 0.01;
+    driveConfig.slot0.kI = 0.0003;
+    driveConfig.slot0.kD = 0.60;
+    driveConfig.slot0.kF = 0.028;
+    driveConfig.slot0.integralZone = 3000;
+    driveConfig.slot0.maxIntegralAccumulator = 200_000;
     driveConfig.slot0.allowableClosedloopError = 0;
     driveConfig.velocityMeasurementPeriod = VelocityMeasPeriod.Period_100Ms;
     driveConfig.velocityMeasurementWindow = 64;
@@ -153,5 +157,13 @@ public class DriveSubsystem extends Subsystem {
     }
 
     return wheels;
+  }
+
+  public void stop() {
+    drive(0, 0, 0);
+  }
+
+  public void drive(double forward, double strafe, double azimuth) {
+    swerve.drive(forward, strafe, azimuth);
   }
 }
