@@ -3,7 +3,6 @@ package frc.team2767.pathbot.control;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.command.Command;
-import frc.team2767.pathbot.command.ClosedLoopDistTestCommand;
 import frc.team2767.pathbot.command.LogCommand;
 import frc.team2767.pathbot.command.PathCommand;
 import frc.team2767.pathbot.command.ZeroGyroCommand;
@@ -29,8 +28,10 @@ public class DriverControls {
     // Push-buttons
     new JoystickButton(joystick, Button.RESET.id).whenPressed(new ZeroGyroCommand());
 
-    new JoystickButton(joystick, Button.HAMBURGER.id).whenPressed(new ClosedLoopDistTestCommand());
-    new JoystickButton(joystick, Button.X.id).whenPressed(new PathCommand());
+    new JoystickButton(joystick, Button.HAMBURGER.id)
+        .whenPressed(new PathCommand("cargo_side_to_loading_b_R"));
+    new JoystickButton(joystick, Button.X.id)
+        .whenPressed(new PathCommand("loading_to_cargo_side_b_l"));
     new JoystickButton(joystick, Button.UP.id).whenPressed(log(Button.UP));
     new JoystickButton(joystick, Button.DOWN.id).whenPressed(log(Button.DOWN));
 

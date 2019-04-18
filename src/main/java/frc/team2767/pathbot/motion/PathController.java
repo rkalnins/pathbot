@@ -24,7 +24,7 @@ public class PathController implements Runnable {
   private double distanceKp;
 
   @SuppressWarnings("FieldCanBeLocal")
-  private double yawKp = 0.0086;
+  private double yawKp = 0.0092;
 
   private Trajectory trajectory;
   private Notifier notifier;
@@ -35,7 +35,7 @@ public class PathController implements Runnable {
   private double DT = 0.02;
   private int iteration;
   private int[] start;
-  private RateLimit rateLimit = new RateLimit(0.0006);
+  private RateLimit rateLimit = new RateLimit(0.00065); // 0.9;
 
   public PathController(SwerveDrive swerveDrive, String pathName, double targetYaw) {
     DRIVE = swerveDrive;

@@ -7,14 +7,16 @@ import frc.team2767.pathbot.subsystem.DriveSubsystem;
 public class PathCommand extends Command {
 
   private static final DriveSubsystem DRIVE = Robot.DRIVE;
+  private final String name;
 
-  public PathCommand() {
+  public PathCommand(String name) {
+    this.name = name;
     requires(DRIVE);
   }
 
   @Override
   protected void initialize() {
-    DRIVE.startPath("loading_to_cargo_side_b_R", 0.0);
+    DRIVE.startPath(name, 0.0);
   }
 
   @Override
