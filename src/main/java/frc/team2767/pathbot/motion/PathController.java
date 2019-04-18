@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.strykeforce.thirdcoast.swerve.SwerveDrive;
 import org.strykeforce.thirdcoast.swerve.Wheel;
+import org.strykeforce.thirdcoast.util.RateLimit;
 
 public class PathController implements Runnable {
 
@@ -23,7 +24,7 @@ public class PathController implements Runnable {
   private double distanceKp;
 
   @SuppressWarnings("FieldCanBeLocal")
-  private double yawKp;
+  private double yawKp = 0.0086;
 
   private Trajectory trajectory;
   private Notifier notifier;
@@ -34,6 +35,7 @@ public class PathController implements Runnable {
   private double DT = 0.02;
   private int iteration;
   private int[] start;
+  private RateLimit rateLimit = new RateLimit(0.0006);
 
   public PathController(SwerveDrive swerveDrive, String pathName, double targetYaw) {
     DRIVE = swerveDrive;
@@ -74,7 +76,7 @@ public class PathController implements Runnable {
         state = States.RUNNING;
         break;
       case RUNNING:
-        logState();
+        //        logState();
         if (iteration == trajectory.length() - 1) {
           state = States.STOPPING;
         }
@@ -86,19 +88,19 @@ public class PathController implements Runnable {
         double forward = Math.cos(segment.heading) * setpointVelocity;
         double strafe = Math.sin(segment.heading) * setpointVelocity;
         double yaw = -yawKp * getYawError();
-        logger.debug(
-            "{} : x={} y={} forward = {} strafe = {}, dist err = {} yaw = {}",
-            iteration,
-            segment.x,
-            segment.y,
-            forward,
-            strafe,
-            distanceError(segment.position),
-            yaw);
+        //        logger.debug(
+        //            "{} : x={} y={} forward = {} strafe = {}, dist err = {} yaw = {}",
+        //            iteration,
+        //            segment.x,
+        //            segment.y,
+        //            forward,
+        //            strafe,
+        //            distanceError(segment.position),
+        //            yaw);
 
         if (forward > 1d || strafe > 1d) logger.warn("forward = {} strafe = {}", forward, strafe);
 
-        DRIVE.drive(forward, strafe, yaw);
+        DRIVE.drive(forward, strafe, rateLimit.apply(yaw));
         iteration++;
         break;
       case STOPPING:
@@ -128,7 +130,9 @@ public class PathController implements Runnable {
   }
 
   public double getYawError() {
-    return (Math.IEEEremainder(DRIVE.getGyro().getAngle(), 360.0) - Math.toDegrees(targetYaw));
+    double error = (Math.IEEEremainder(DRIVE.getGyro().getAngle(), 360.0) - targetYaw);
+    logger.debug("yaw error = {}", error);
+    return error;
   }
 
   private double distanceError(double position) {
