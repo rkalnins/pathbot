@@ -29,11 +29,15 @@ public class DriveSubsystem extends Subsystem implements Item {
   public static final double DRIVE_SETPOINT_MAX = 40_000.0;
   private static final double ROBOT_LENGTH = 21.0;
   private static final double ROBOT_WIDTH = 26.0;
-
-  private final SwerveDrive swerve = getSwerve();
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private PathController pathController;
   private boolean isDrivingPath = false;
+  private double forward;
+  private double strafe;
+  private double yaw;
+  private double pathTargetYaw;
+  private Wheel[] wheels;
+  private final SwerveDrive swerve = getSwerve();
 
   public DriveSubsystem() {}
 
@@ -61,7 +65,8 @@ public class DriveSubsystem extends Subsystem implements Item {
 
   public void startPath(String path, double targetYaw) {
     logger.debug("starting path");
-    this.pathController = new PathController(swerve, path, targetYaw);
+    this.pathController = new PathController(path, targetYaw);
+    pathTargetYaw = targetYaw;
     isDrivingPath = true;
     pathController.start();
   }
@@ -96,7 +101,7 @@ public class DriveSubsystem extends Subsystem implements Item {
 
   private SwerveDrive getSwerve() {
     SwerveDriveConfig config = new SwerveDriveConfig();
-    config.wheels = getWheels();
+    config.wheels = getWheelsConfig();
     config.gyro = new AHRS(SPI.Port.kMXP);
     config.length = ROBOT_LENGTH;
     config.width = ROBOT_WIDTH;
@@ -108,7 +113,7 @@ public class DriveSubsystem extends Subsystem implements Item {
 
   // Swerve configuration
 
-  private Wheel[] getWheels() {
+  private Wheel[] getWheelsConfig() {
     TalonSRXConfiguration azimuthConfig = new TalonSRXConfiguration();
     // NOTE: ensure encoders are in-phase with motor direction. Encoders should increase
     // when azimuth motor runs in forward direction.
@@ -145,7 +150,7 @@ public class DriveSubsystem extends Subsystem implements Item {
     telemetryService.stop();
     telemetryService.register(this);
 
-    Wheel[] wheels = new Wheel[4];
+    wheels = new Wheel[4];
 
     for (int i = 0; i < 4; i++) {
       TalonSRX azimuthTalon = new TalonSRX(i);
@@ -165,11 +170,22 @@ public class DriveSubsystem extends Subsystem implements Item {
     return wheels;
   }
 
+  public Wheel[] getWheels() {
+    return wheels;
+  }
+
+  public AHRS getGyro() {
+    return swerve.getGyro();
+  }
+
   public void stop() {
     drive(0, 0, 0);
   }
 
   public void drive(double forward, double strafe, double azimuth) {
+    this.forward = forward;
+    this.strafe = strafe;
+    this.yaw = azimuth;
     swerve.drive(forward, strafe, azimuth);
   }
 
@@ -187,7 +203,12 @@ public class DriveSubsystem extends Subsystem implements Item {
   @NotNull
   @Override
   public Set<Measure> getMeasures() {
-    return Set.of(Measure.ANGLE, Measure.CLOSED_LOOP_ERROR);
+    return Set.of(
+        Measure.ANGLE,
+        Measure.COMPONENT_FORWARD,
+        Measure.COMPONENT_STRAFE,
+        Measure.COMPONENT_YAW,
+        Measure.CLOSED_LOOP_ERROR);
   }
 
   @NotNull
@@ -207,6 +228,14 @@ public class DriveSubsystem extends Subsystem implements Item {
     switch (measure) {
       case ANGLE:
         return () -> Math.IEEEremainder(swerve.getGyro().getAngle(), 360);
+      case COMPONENT_FORWARD:
+        return () -> forward;
+      case COMPONENT_STRAFE:
+        return () -> strafe;
+      case COMPONENT_YAW:
+        return () -> yaw;
+      case CLOSED_LOOP_ERROR:
+        return () -> pathTargetYaw - Math.IEEEremainder(swerve.getGyro().getAngle(), 360);
       default:
         return () -> 2767.0;
     }

@@ -1,30 +1,26 @@
 package frc.team2767.pathbot.motion;
 
 import edu.wpi.first.wpilibj.Notifier;
+import frc.team2767.pathbot.Robot;
+import frc.team2767.pathbot.subsystem.DriveSubsystem;
 import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.strykeforce.thirdcoast.swerve.SwerveDrive;
 import org.strykeforce.thirdcoast.swerve.Wheel;
-import org.strykeforce.thirdcoast.util.RateLimit;
 
 public class PathController implements Runnable {
 
   private static final int NUM_WHEELS = 4;
   private static final int TICKS_PER_INCH = 2300;
+  private static final DriveSubsystem DRIVE = Robot.DRIVE;
+  //  private static final double RATE_CAP = 0.35;
+  //  private static final RateLimit rateLimit = new RateLimit(0.015);
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final int PID = 0;
 
   @SuppressWarnings("FieldCanBeLocal")
-  private final double accelerationKf = 0.00000;
-
-  private SwerveDrive DRIVE;
-
-  @SuppressWarnings("FieldCanBeLocal")
-  private double distanceKp;
-
-  @SuppressWarnings("FieldCanBeLocal")
-  private double yawKp = 0.0092;
+  private double yawKp = 0.003;
 
   private Trajectory trajectory;
   private Notifier notifier;
@@ -35,10 +31,8 @@ public class PathController implements Runnable {
   private double DT = 0.02;
   private int iteration;
   private int[] start;
-  private RateLimit rateLimit = new RateLimit(0.00065); // 0.9;
 
-  public PathController(SwerveDrive swerveDrive, String pathName, double targetYaw) {
-    DRIVE = swerveDrive;
+  public PathController(String pathName, double targetYaw) {
     this.targetYaw = targetYaw;
     wheels = DRIVE.getWheels();
     File csvFile = new File("home/lvuser/deploy/paths/" + pathName + ".pf1.csv");
@@ -63,8 +57,8 @@ public class PathController implements Runnable {
     switch (state) {
       case STARTING:
         logState();
-        double ticksPerSecMax = wheels[0].getDriveSetpointMax() * 10.0; // ticks/100ms
-        maxVelocityInSec = ticksPerSecMax / TICKS_PER_INCH; // in/s
+        double ticksPerSecMax = wheels[0].getDriveSetpointMax() * 10.0;
+        maxVelocityInSec = ticksPerSecMax / TICKS_PER_INCH;
         iteration = 0;
         DRIVE.setDriveMode(SwerveDrive.DriveMode.CLOSED_LOOP);
 
@@ -76,7 +70,6 @@ public class PathController implements Runnable {
         state = States.RUNNING;
         break;
       case RUNNING:
-        //        logState();
         if (iteration == trajectory.length() - 1) {
           state = States.STOPPING;
         }
@@ -88,19 +81,11 @@ public class PathController implements Runnable {
         double forward = Math.cos(segment.heading) * setpointVelocity;
         double strafe = Math.sin(segment.heading) * setpointVelocity;
         double yaw = -yawKp * getYawError();
-        //        logger.debug(
-        //            "{} : x={} y={} forward = {} strafe = {}, dist err = {} yaw = {}",
-        //            iteration,
-        //            segment.x,
-        //            segment.y,
-        //            forward,
-        //            strafe,
-        //            distanceError(segment.position),
-        //            yaw);
 
         if (forward > 1d || strafe > 1d) logger.warn("forward = {} strafe = {}", forward, strafe);
 
-        DRIVE.drive(forward, strafe, rateLimit.apply(yaw));
+        //
+        DRIVE.drive(forward, strafe, yaw);
         iteration++;
         break;
       case STOPPING:
@@ -122,9 +107,8 @@ public class PathController implements Runnable {
 
   private void logInit() {
     logger.info(
-        "Path start yawKp = {} distKp = {} targetYaw = {} maxVelocity in/s = {}",
+        "Path start yawKp = {} targetYaw = {} maxVelocity in/s = {}",
         yawKp,
-        distanceKp,
         targetYaw,
         maxVelocityInSec);
   }
